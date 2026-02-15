@@ -3,156 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>草原拉伸大冒险</title>
+    <title>草原拉伸大冒险 - 专业版</title>
     <style>
         :root { --main-green: #4caf50; --sky-blue: #87CEEB; }
         body {
             font-family: 'Segoe UI', sans-serif;
-            /* 模拟草原背景：天空到草地的渐变 */
-            background: linear-gradient(to bottom, var(--sky-blue) 0%, #e8f5e9 50%, #81c784 100%);
+            background: linear-gradient(to bottom, var(--sky-blue) 0%, #f1f8e9 50%, #81c784 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             min-height: 100vh; margin: 0; padding: 20px;
         }
         .container {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.92);
             border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            padding: 25px; width: 100%; max-width: 400px; text-align: center;
+            padding: 25px; width: 100%; max-width: 450px; text-align: center;
             border: 4px solid #fff;
         }
         .user-card {
-            background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px;
-            border: 2px solid var(--main-green);
+            background: white; border-radius: 15px; padding: 12px; margin-bottom: 15px;
+            border: 2px solid var(--main-green); font-size: 14px;
         }
-        .level-tag { background: #ffeb3b; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; }
-        .quote-box { font-style: italic; color: #555; font-size: 13px; margin: 10px 0; min-height: 35px; }
-        .timer { font-size: 80px; font-weight: bold; color: var(--main-green); text-shadow: 2px 2px 0px #fff; }
-        .exercise-title { font-size: 26px; font-weight: bold; color: #2e7d32; }
+        .level-tag { background: #ffeb3b; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+        
+        .timer { font-size: 80px; font-weight: bold; color: var(--main-green); margin: 10px 0; }
+        .status-badge { font-size: 18px; font-weight: bold; color: #e67e22; margin-bottom: 5px; }
+        .exercise-title { font-size: 26px; font-weight: bold; color: #1565c0; min-height: 35px; }
+
+        .instructions { 
+            text-align: left; background: #f9f9f9; padding: 15px; 
+            border-radius: 12px; margin: 15px 0; min-height: 140px;
+            border-left: 5px solid var(--main-green);
+        }
+        .instructions ul { padding-left: 20px; margin: 5px 0; }
+        .instructions li { margin-bottom: 5px; color: #333; line-height: 1.4; }
+
+        .next-preview { font-size: 14px; color: #666; font-style: italic; margin-top: 10px; }
+
         .controls button {
             background: var(--main-green); color: white; border: none;
-            padding: 15px 35px; font-size: 18px; border-radius: 50px;
-            cursor: pointer; box-shadow: 0 4px 0 #388e3c; transition: 0.2s;
+            padding: 15px 40px; font-size: 20px; border-radius: 50px;
+            cursor: pointer; box-shadow: 0 4px 0 #388e3c; transition: 0.2s; width: 80%;
         }
         .controls button:active { transform: translateY(4px); box-shadow: none; }
-        .progress-bar { background: #ddd; height: 10px; border-radius: 5px; margin-top: 20px; overflow: hidden; }
+        
+        .progress-container { width: 100%; margin-top: 20px; }
+        .progress-bar { background: #ddd; height: 10px; border-radius: 5px; overflow: hidden; }
         .progress-fill { background: var(--main-green); height: 100%; width: 0%; transition: 0.5s; }
     </style>
 </head>
 <body>
 
-<div class="container" id="app">
+<div class="container">
     <div class="user-card">
-        <div id="userNameDisplay" style="font-size: 18px; font-weight: bold;">朋友，准备好了吗？</div>
-        <div>
-            <span class="level-tag" id="levelName">拉伸萌新</span>
-            🔥 连胜: <span id="streakCount">0</span> 天
-        </div>
-        <div class="quote-box" id="dailyQuote">"每一次拉伸，都是对身体的温柔表白。"</div>
+        <div><strong>勇者:</strong> <span id="userNameDisplay">加载中...</span> <span class="level-tag" id="levelName">拉伸萌新</span></div>
+        <div style="margin-top:5px;">🔥 连胜: <span id="streakCount">0</span> 天 | 总训练: <span id="totalWorkouts">0</span> 次</div>
     </div>
 
-    <div class="exercise-title" id="exerciseTitle">点击按钮开始</div>
+    <div class="status-badge" id="statusText">准备好了吗？</div>
+    <div class="exercise-title" id="exerciseTitle">点击下方开始</div>
+    
     <div class="timer" id="timerDisplay">35</div>
     
-    <div id="instructions" style="margin: 15px 0; color: #444;"></div>
+    <div class="instructions" id="instructionsDiv">
+        <div id="instructionContext" style="font-weight:bold; margin-bottom:5px; color:#2e7d32;">动作要领：</div>
+        <ul id="instructionsList">
+            <li>完成 5 个动作，每项 35 秒</li>
+            <li>休息 10 秒，会有下一项预告</li>
+        </ul>
+    </div>
 
     <div class="controls">
         <button id="startBtn" onclick="toggleTimer()">开启冒险</button>
     </div>
 
-    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-    <p style="font-size: 12px; color: #666; margin-top: 10px;">进度: <span id="progressText">0/5</span></p>
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div style="font-size:12px; color:#666; margin-top:5px;">进度: <span id="progressText">0/5</span></div>
+    </div>
 </div>
 
 <audio id="beepSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
 <script>
-    // --- 数据存储与逻辑 ---
-    let userName = localStorage.getItem('s_user') || prompt("输入你的勇者名字：") || "匿名勇者";
+    // --- 数据与登录 ---
+    let userName = localStorage.getItem('s_user') || prompt("请输入你的名字：") || "勇者";
     localStorage.setItem('s_user', userName);
     let streak = parseInt(localStorage.getItem('s_streak')) || 0;
-    let totalWorkouts = parseInt(localStorage.getItem('s_total')) || 0;
+    let total = parseInt(localStorage.getItem('s_total')) || 0;
     
-    const quotes = [
-        "今天的草性格外清新，正适合拉伸！",
-        "听，那是韧带在变快乐的声音。",
-        "哪怕只是一分钟，身体也会感谢你。",
-        "连胜是不动声色的强大。"
-    ];
-
-    document.getElementById('userNameDisplay').textContent = "勇者: " + userName;
+    document.getElementById('userNameDisplay').textContent = userName;
     document.getElementById('streakCount').textContent = streak;
-    document.getElementById('dailyQuote').textContent = `"${quotes[Math.floor(Math.random()*quotes.length)]}"`;
+    document.getElementById('totalWorkouts').textContent = total;
     updateLevel();
 
     function updateLevel() {
-        let level = "拉伸萌新";
-        if (totalWorkouts > 5) level = "拉伸进阶者";
-        if (totalWorkouts > 15) level = "筋骨奇才";
-        if (totalWorkouts > 30) level = "草原拉伸大师";
-        document.getElementById('levelName').textContent = level;
+        let lv = "拉伸萌新";
+        if(total > 5) lv = "拉伸进阶者";
+        if(total > 15) lv = "筋骨奇才";
+        if(total > 30) lv = "草原拉伸大师";
+        document.getElementById('levelName').textContent = lv;
     }
 
-    // --- 计时器核心 ---
+    // --- 动作数据 (完全匹配你的要求) ---
     const exercises = [
-        { t: "全身伸展", d: "双手举高，试图触碰云朵" },
-        { t: "骨盆前倾", d: "挺起胸膛，感受草原的微风" },
-        { t: "臀部拉伸", d: "稳稳坐下，像大树一样扎根" },
-        { t: "猫牛式", d: "像草原上的猫一样舒展脊柱" },
-        { t: "墙壁抬腿", d: "仰望天空，彻底放松双腿" }
+        {
+            title: "1. 全身伸展",
+            steps: ["双脚打开与肩同宽", "双手高举向上伸直", "头往上拉伸，感觉背部被拉长"]
+        },
+        {
+            title: "2. 骨盆前倾伸展",
+            steps: ["双腿站好", "双手放在腰两侧", "前倾骨盆、挺胸、看向天花板"]
+        },
+        {
+            title: "3. 臀部拉伸",
+            steps: ["坐在地上", "一条腿伸直，另一条腿弯曲、脚放在外侧", "上身向伸直那条腿方向弯"]
+        },
+        {
+            title: "4. 猫牛式伸展",
+            steps: ["四肢着地", "吸气背拱（猫）", "呼气背下沉（牛）", "反复动作"]
+        },
+        {
+            title: "5. 墙壁抬腿",
+            steps: ["面对墙", "抬一条腿到墙上", "轻轻靠在墙上保持平衡"]
+        }
     ];
 
-    let currentIdx = 0, timeLeft = 35, isWorking = true, isRunning = false, timer = null;
+    let currentIdx = 0, timeLeft = 35, isWorking = true, isRunning = false, timerInterval = null;
     const beep = document.getElementById('beepSound');
 
     function toggleTimer() {
         if (!isRunning) {
             beep.play(); beep.pause();
-            timer = setInterval(() => {
-                timeLeft--;
-                if (timeLeft < 0) {
-                    beep.play();
-                    if (isWorking) {
-                        isWorking = false; timeLeft = 10; currentIdx++;
-                    } else {
-                        isWorking = true; timeLeft = 35;
-                    }
-                    if (currentIdx >= exercises.length) {
-                        finishWorkout(); return;
-                    }
-                }
-                refreshUI();
-            }, 1000);
+            timerInterval = setInterval(tick, 1000);
             document.getElementById('startBtn').textContent = "暂停";
         } else {
-            clearInterval(timer);
+            clearInterval(timerInterval);
             document.getElementById('startBtn').textContent = "继续";
         }
         isRunning = !isRunning;
     }
 
-    function refreshUI() {
-        document.getElementById('timerDisplay').textContent = timeLeft;
-        if (isWorking && currentIdx < exercises.length) {
-            document.getElementById('exerciseTitle').textContent = exercises[currentIdx].t;
-            document.getElementById('instructions').textContent = exercises[currentIdx].d;
-        } else {
-            document.getElementById('exerciseTitle').textContent = "深呼吸，休息中...";
+    function tick() {
+        timeLeft--;
+        if (timeLeft < 0) {
+            beep.play();
+            if (isWorking) {
+                isWorking = false;
+                timeLeft = 10; // 休息 10 秒
+                currentIdx++;
+                if (currentIdx >= exercises.length) {
+                    completeWorkout();
+                    return;
+                }
+            } else {
+                isWorking = true;
+                timeLeft = 35; // 动作 35 秒
+            }
         }
-        let p = (currentIdx / 5) * 100;
-        document.getElementById('progressFill').style.width = p + "%";
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('timerDisplay').textContent = timeLeft;
+        const list = document.getElementById('instructionsList');
+        const context = document.getElementById('instructionContext');
+
+        if (isWorking) {
+            document.getElementById('statusText').textContent = "🔥 正在进行";
+            document.getElementById('statusText').style.color = "#e67e22";
+            document.getElementById('exerciseTitle').textContent = exercises[currentIdx].title;
+            context.textContent = "当前动作要领：";
+            list.innerHTML = exercises[currentIdx].steps.map(s => `<li>${s}</li>`).join('');
+        } else {
+            document.getElementById('statusText').textContent = "☕ 休息时间";
+            document.getElementById('statusText').style.color = "#2980b9";
+            document.getElementById('exerciseTitle').textContent = "准备下一个动作";
+            context.textContent = `即将开始: ${exercises[currentIdx].title}`;
+            list.innerHTML = exercises[currentIdx].steps.map(s => `<li style="color:#888;">${s}</li>`).join('');
+        }
+
+        let progress = (currentIdx / 5) * 100;
+        document.getElementById('progressFill').style.width = progress + "%";
         document.getElementById('progressText').textContent = currentIdx + "/5";
     }
 
-    function finishWorkout() {
-        clearInterval(timer);
+    function completeWorkout() {
+        clearInterval(timerInterval);
         const today = new Date().toISOString().split('T')[0];
         if (localStorage.getItem('s_last_date') !== today) {
-            streak++;
-            totalWorkouts++;
+            streak++; total++;
             localStorage.setItem('s_streak', streak);
-            localStorage.setItem('s_total', totalWorkouts);
+            localStorage.setItem('s_total', total);
             localStorage.setItem('s_last_date', today);
         }
-        alert("🎉 挑战成功！你在草原上又迈出了一大步！");
+        alert("🎉 挑战成功！连胜记录已更新！");
         location.reload();
     }
 </script>
