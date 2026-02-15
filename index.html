@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日常拉伸跟练计时器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .status {
+            font-size: 20px;
+            font-weight: bold;
+            color: #e67e22;
+            margin-bottom: 10px;
+            min-height: 30px;
+        }
+        .timer {
+            font-size: 80px;
+            font-weight: bold;
+            color: #27ae60;
+            margin: 20px 0;
+            line-height: 1;
+        }
+        .exercise-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2980b9;
+            margin-bottom: 15px;
+            min-height: 40px;
+        }
+        .instructions {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            min-height: 120px;
+        }
+        .instructions ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .controls button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+        .controls button:hover {
+            background-color: #2980b9;
+        }
+        .controls button.reset {
+            background-color: #95a5a6;
+        }
+        .controls button.reset:hover {
+            background-color: #7f8c8d;
+        }
+        .progress {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        /* 状态颜色变换 */
+        .work-mode .timer { color: #27ae60; }
+        .rest-mode .timer { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <h1>🧘 日常拉伸跟练</h1>
+    
+    <div class="status" id="statusText">准备开始</div>
+    
+    <div class="exercise-title" id="exerciseTitle">点击开始按钮</div>
+    
+    <div class="timer" id="timerDisplay">00</div>
+    
+    <div class="instructions" id="instructionsDiv">
+        <ul id="instructionsList">
+            <li>每个动作做 35 秒</li>
+            <li>休息 10 秒</li>
+            <li>做一轮即可</li>
+        </ul>
+    </div>
+    
+    <div class="controls">
+        <button id="startBtn" onclick="toggleTimer()">开始</button>
+        <button class="reset" onclick="resetTimer()">重置</button>
+    </div>
+    
+    <div class="progress" id="progressText">进度: 0 / 5</div>
+</div>
+
+<script>
+    const exercises = [
+        {
+            title: "1. 全身伸展",
+            steps: ["双脚打开与肩同宽", "双手高举向上伸直", "头往上拉伸，感觉背部被拉长"]
+        },
+        {
+            title: "2. 骨盆前倾伸展",
+            steps: ["双腿站好", "双手放在腰两侧", "前倾骨盆、挺胸、看向天花板"]
+        },
+        {
+            title: "3. 臀部拉伸",
+            steps: ["坐在地上", "一条腿伸直，另一条腿弯曲、脚放在外侧", "上身向伸直那条腿方向弯"]
+        },
+        {
+            title: "4. 猫牛式伸展",
+            steps: ["四肢着地", "吸气背拱（猫）", "呼气背下沉（牛）", "反复动作"]
+        },
+        {
+            title: "5. 墙壁抬腿",
+            steps: ["面对墙", "抬一条腿到墙上", "轻轻靠在墙上保持平衡"]
+        }
+    ];
+
+    const WORK_TIME = 35; // 动作时间 35秒
+    const REST_TIME = 10; // 休息时间 10秒
+
+    let currentExerciseIndex = 0;
+    let timeLeft = WORK_TIME;
+    let isWorking = true; // true = 做动作, false = 休息
+    let isRunning = false;
+    let timerInterval = null;
+
+    const statusText = document.getElementById('statusText');
+    const exerciseTitle = document.getElementById('exerciseTitle');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const instructionsList = document.getElementById('instructionsList');
+    const startBtn = document.getElementById('startBtn');
+    const progressText = document.getElementById('progressText');
+    const appContainer = document.getElementById('app');
+
+    function updateDisplay() {
+        if (currentExerciseIndex >= exercises.length) {
+            // 完成所有动作
+            statusText.textContent = "🎉 恭喜！";
+            exerciseTitle.textContent = "拉伸完成，辛苦了！";
+            timerDisplay.textContent = "--";
+            instructionsList.innerHTML = "<li>你已经完成了所有动作，感觉身体放松了吗？</li>";
+            startBtn.style.display = 'none';
+            appContainer.className = 'container';
+            return;
+        }
+
+        const currentEx = exercises[currentExerciseIndex];
+        
+        // 更新时间
+        timerDisplay.textContent = timeLeft;
+
+        // 更新状态和界面
+        if (isWorking) {
+            statusText.textContent = "🔥 进行中";
+            exerciseTitle.textContent = currentEx.title;
+            appContainer.className = 'container work-mode';
+            
+            // 更新指导步骤
+            instructionsList.innerHTML = currentEx.steps.map(step => `<li>${step}</li>`).join('');
+        } else {
+            statusText.textContent = "☕ 休息一下";
+            const nextEx = exercises[currentExerciseIndex];
+            exerciseTitle.textContent = "即将进行: " + nextEx.title;
+            appContainer.className = 'container rest-mode';
+            
+            instructionsList.innerHTML = `<li>深呼吸，准备下一个动作</li>` + 
+                                         nextEx.steps.map(step => `<li style="color:#7f8c8d; font-size:14px;">(预演: ${step})</li>`).join('');
+        }
+
+        progressText.textContent = `进度: ${currentExerciseIndex + 1} / ${exercises.length}`;
+    }
+
+    function timerTick() {
+        timeLeft--;
+        
+        if (timeLeft < 0) {
+            // 切换状态
+            if (isWorking) {
+                // 动作结束，进入休息
+                isWorking = false;
+                timeLeft = REST_TIME;
+                currentExerciseIndex++; // 动作做完才算下一个
+                
+                // 如果做完了最后一个动作，直接结束，不需要再休息了
+                if (currentExerciseIndex >= exercises.length) {
+                     clearInterval(timerInterval);
+                     isRunning = false;
+                     updateDisplay();
+                     return;
+                }
+            } else {
+                // 休息结束，进入下一个动作
+                isWorking = true;
+                timeLeft = WORK_TIME;
+            }
+        }
+        updateDisplay();
+    }
+
+    function toggleTimer() {
+        if (isRunning) {
+            clearInterval(timerInterval);
+            startBtn.textContent = "继续";
+            statusText.textContent = "暂停中";
+        } else {
+            if (currentExerciseIndex >= exercises.length) return; // 已经结束了
+            
+            // 如果刚开始，初始化显示
+            if (timeLeft === WORK_TIME && isWorking && currentExerciseIndex === 0) {
+                 updateDisplay();
+            }
+            
+            timerInterval = setInterval(timerTick, 1000);
+            startBtn.textContent = "暂停";
+        }
+        isRunning = !isRunning;
+    }
+
+    function resetTimer() {
+        clearInterval(timerInterval);
+        isRunning = false;
+        currentExerciseIndex = 0;
+        isWorking = true;
+        timeLeft = WORK_TIME;
+        
+        startBtn.textContent = "开始";
+        startBtn.style.display = 'inline-block';
+        
+        statusText.textContent = "准备开始";
+        exerciseTitle.textContent = "点击开始按钮";
+        timerDisplay.textContent = "00";
+        instructionsList.innerHTML = `<li>每个动作做 35 秒</li><li>休息 10 秒</li><li>做一轮即可</li>`;
+        progressText.textContent = "进度: 0 / 5";
+        appContainer.className = 'container';
+    }
+
+</script>
+</body>
+</html>
